@@ -1,66 +1,81 @@
+#!/usr/bin/env python3
+"""
+Mamba-YOLO Evaluation Script
+Menghitung: Params, GFLOPs, Latency, Precision, Recall, mAP50, mAP50-95
+"""
+
 from ultralytics import YOLO
 import argparse
 import os
 
-ROOT = os.path.abspath('.') + "/"
+ROOT = os.path.abspath(".") + "/"
 
 
 def parse_opt():
-    parser = argparse.ArgumentParser(description="Mamba-YOLO Evaluation: FLOPs, Params, Latency, Precision, Recall, mAP50, mAP50-95")
-    parser.add_argument('--weights',  type=str,   default=None,                                                        help='path to trained .pt weights (required for val metrics)')
-    parser.add_argument('--config',   type=str,   default=ROOT + 'ultralytics/cfg/models/mamba-yolo/Mamba-YOLO-T.yaml',help='model config yaml (used if --weights not provided)')
-    parser.add_argument('--data',     type=str,   default=ROOT + 'ultralytics/cfg/datasets/coco.yaml',                 help='dataset yaml path')
-    parser.add_argument('--imgsz',    type=int,   default=640,                                                          help='input image size')
-    parser.add_argument('--batch',    type=int,   default=32,                                                           help='batch size for validation')
-    parser.add_argument('--device',   type=str,   default='0',                                                          help='cuda device, e.g. 0 or cpu')
-    parser.add_argument('--workers',  type=int,   default=8,                                                            help='dataloader workers')
-    parser.add_argument('--half',     action='store_true',                                                              help='use FP16 half-precision inference')
-    parser.add_argument('--project',  type=str,   default=ROOT + 'output_dir/eval',                                    help='directory to save results')
-    parser.add_argument('--name',     type=str,   default='mambayolo_eval',                                             help='save to project/name')
+    parser = argparse.ArgumentParser(description="Mamba-YOLO Evaluation")
+
+    parser.add_argument("--weights", type=str, required=True,
+                        help="Path ke trained .pt weights")
+    parser.add_argument("--data",    type=str, default="dataset/data.yaml",
+                        help="Path ke dataset config YAML")
+    parser.add_argument("--imgsz",   type=int, default=640)
+    parser.add_argument("--batch",   type=int, default=32)
+    parser.add_argument("--device",  type=str, default="0",
+                        help="GPU: 0 | cpu")
+    parser.add_argument("--workers", type=int, default=8)
+    parser.add_argument("--half",    action="store_true",
+                        help="FP16 inference")
+    parser.add_argument("--project", type=str, default="output_dir/eval")
+    parser.add_argument("--name",    type=str, default="mambayolo_eval")
+
     return parser.parse_args()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     opt = parse_opt()
 
-    # ── Load model ──────────────────────────────────────────
-    if opt.weights and os.path.isfile(opt.weights):
-        print(f"[INFO] Loading weights: {opt.weights}")
-        model = YOLO(opt.weights)
-    else:
-        print(f"[INFO] No weights provided — loading config only: {opt.config}")
-        model = YOLO(opt.config)
+    # ── Load model ────────────────────────────────────────────────
+    model = YOLO(opt.weights)
 
-    # ── FLOPs & Params ──────────────────────────────────────
-    print("\n========== MODEL INFO (Params & GFLOPs) ==========")
-    model.info(verbose=True, imgsz=opt.imgsz)
-
-    # ── Precision, Recall, mAP50, mAP50-95, Latency ────────
-    print("\n========== VALIDATION METRICS ===================")
+    # ── Validasi: Precision, Recall, mAP, Latency ────────────────
+    # Dilakukan dulu agar model sudah di-load ke GPU yang benar
+    print("\n========== VALIDATION ==========================")
     results = model.val(
-        data=opt.data,
-        imgsz=opt.imgsz,
-        batch=opt.batch,
-        device=opt.device,
-        workers=opt.workers,
-        half=opt.half,
-        project=opt.project,
-        name=opt.name,
+        data    = ROOT + opt.data,
+        split   = "test",
+        imgsz   = opt.imgsz,
+        batch   = opt.batch,
+        device  = opt.device,
+        workers = opt.workers,
+        half    = opt.half,
+        project = ROOT + opt.project,
+        name    = opt.name,
     )
 
-    # ── Print Summary ───────────────────────────────────────
-    print("\n========== RESULTS SUMMARY ======================")
-    rd = results.results_dict
-    print(f"  Precision  (B) : {rd.get('metrics/precision(B)', 'N/A'):.4f}")
-    print(f"  Recall     (B) : {rd.get('metrics/recall(B)',    'N/A'):.4f}")
-    print(f"  mAP50      (B) : {rd.get('metrics/mAP50(B)',     'N/A'):.4f}")
-    print(f"  mAP50-95   (B) : {rd.get('metrics/mAP50-95(B)', 'N/A'):.4f}")
-    print(f"  Fitness        : {rd.get('fitness',              'N/A'):.4f}")
+    # ── Params & GFLOPs ──────────────────────────────────────────
+    # Dipanggil setelah val() agar model sudah berada di device yang benar
+    # model.info() mengembalikan (n_layers, n_params, n_gradients, gflops)
+    print("\n========== MODEL INFO ==========================")
+    _, n_params, _, gflops = model.info(verbose=True, imgsz=opt.imgsz)
 
+    # ── Summary ───────────────────────────────────────────────────
+    rd  = results.results_dict
     spd = results.speed
-    print(f"\n  Latency (ms/img):")
-    print(f"    Preprocess   : {spd.get('preprocess',  0):.2f} ms")
-    print(f"    Inference    : {spd.get('inference',   0):.2f} ms")
-    print(f"    Postprocess  : {spd.get('postprocess', 0):.2f} ms")
-    print(f"    Total        : {sum(spd.values()):.2f} ms")
-    print("=================================================\n")
+
+    print("\n========== RESULTS SUMMARY =====================")
+    print(f"  {'Precision':<18} {rd.get('metrics/precision(B)', 0):.4f}")
+    print(f"  {'Recall':<18} {rd.get('metrics/recall(B)',    0):.4f}")
+    print(f"  {'mAP@0.5':<18} {rd.get('metrics/mAP50(B)',    0):.4f}")
+    print(f"  {'mAP@0.5:0.95':<18} {rd.get('metrics/mAP50-95(B)',0):.4f}")
+    print(f"  {'Fitness':<18} {rd.get('fitness',             0):.4f}")
+    print(f"  ---")
+    print(f"  {'Parameters':<18} {n_params/1e6:.2f}M")
+    print(f"  {'GFLOPs':<18} {gflops:.2f}")
+    print(f"  ---")
+    print(f"  Latency (ms/img):")
+    print(f"    {'Preprocess':<16} {spd.get('preprocess',  0):.2f} ms")
+    print(f"    {'Inference':<16} {spd.get('inference',   0):.2f} ms")
+    print(f"    {'Postprocess':<16} {spd.get('postprocess', 0):.2f} ms")
+    total = sum(spd.values())
+    print(f"    {'Total':<16} {total:.2f} ms  ({1000/total:.1f} FPS)")
+    print("================================================\n")

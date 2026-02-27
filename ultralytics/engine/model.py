@@ -334,7 +334,7 @@ class Model(nn.Module):
         }
         torch.save({**self.ckpt, **updates}, filename, use_dill=use_dill)
 
-    def info(self, detailed: bool = False, verbose: bool = True):
+    def info(self, detailed: bool = False, verbose: bool = True, imgsz: int = 640):
         """
         Logs or returns model information.
 
@@ -352,7 +352,7 @@ class Model(nn.Module):
             AssertionError: If the model is not a PyTorch model.
         """
         self._check_is_pytorch_model()
-        return self.model.info(detailed=detailed, verbose=verbose)
+        return self.model.info(detailed=detailed, verbose=verbose, imgsz=imgsz)
 
     def fuse(self):
         """

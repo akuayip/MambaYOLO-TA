@@ -26,6 +26,7 @@ pip3 install torch===2.3.0 torchvision torchaudio
 
 use this if code was error when you build selective scan 
 ```bash
+pip install torch==2.3.0 torchvision==0.18.0 torchaudio==2.3.0 --index-url https://download.pytorch.org/whl/cu121
 
 ```
 
