@@ -36,7 +36,7 @@ python mbyolo_train.py \
     --project output_dir/freeze-backbone\
     --name 8_lr0.01_b16_optSGD_e200
 ```
-
+c
 python mbyolo_train.py \
     --pretrained yolov8n.pt \
     --freeze-backbone \
