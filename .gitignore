@@ -118,5 +118,5 @@ celerybeat.pid
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Comparasion for OFAT
-compare/
+# # Comparasion for OFAT
+# compare/

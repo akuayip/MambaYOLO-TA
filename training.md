@@ -65,7 +65,7 @@ python mbyolo_train.py \
 ## EVAL
 ```bash
 python mbyolo_eval.py \
-    --weights output_dir/freeze-backbone/7_lr0.01_b8_optSGD_e200/weights/best.pt \
+    --weights output_dir/freeze-backbone/9_lr0.01_b32_optSGD_e200/weights/best.pt \
     --data dataset/data.yaml \
     --batch 8
 ```
