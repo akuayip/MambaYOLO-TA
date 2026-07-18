@@ -58,7 +58,20 @@ Make sure your dataset structure as follows:
 Look file:  mbyolo_train.py for train mamba yolo
 ```
 
+#### 8. Convert best.pt / best.pth to ONNX
+```bash
+# Otomatis cari best.pt/best.pth dari output_dir training
+python mbyolo_export_onnx.py \
+    --output-dir output_dir/freeze-backbone/9_lr0.01_b32_optSGD_e200 \
+    --imgsz 640 \
+    --device cpu
+
+# Atau panggil langsung file weights
+python mbyolo_export_onnx.py \
+    --weights output_dir/freeze-backbone/9_lr0.01_b32_optSGD_e200/weights/best.pt \
+    --output output_dir/freeze-backbone/9_lr0.01_b32_optSGD_e200/weights/best.onnx
+```
+
 ## Acknowledgement
 
 This repo is modified from open source real-time object detection codebase [Mamba YOLO](https://github.com/HZAI-ZJNU/Mamba-YOLO).
-
